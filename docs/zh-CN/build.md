@@ -1,0 +1,33 @@
+# 构建与测试
+
+[English](../en/build.md) | 简体中文
+
+## 前提
+
+- Windows x64 和 JDK 25，Android Studio 自带可用 JBR。
+- 本地 Android Studio 261 安装，作为最低 SDK 目标。发布产物使用 261 编译。
+- Zig 0.14.1，用于构建静态链接的原生辅助程序；将 `ZIG_EXE` 指向 `zig.exe`。
+
+从[官方发布地址](https://ziglang.org/download/0.14.1/zig-x86_64-windows-0.14.1.zip)下载 Zig，SHA-256 为 `554f5378228923ffd558eac35e21af020c73789d87afeabf4bfd16f2e6feed2c`。未设置 `ZIG_EXE` 时，构建也会检查 `%LOCALAPPDATA%\FileLockInspector\toolchains\zig-x86_64-windows-0.14.1\zig.exe`。
+
+## 命令
+
+在仓库根目录使用 PowerShell：
+
+```powershell
+$env:IDE_HOME = 'D:\ProgramFiles\Android\StudioApps\Android Studio 4'
+$env:JAVA_HOME = Join-Path $env:IDE_HOME 'jbr'
+$env:ZIG_EXE = 'C:\toolchains\zig-x86_64-windows-0.14.1\zig.exe'
+.\gradlew.bat test buildPlugin
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File native/windows/tests/integration.ps1
+```
+
+也可以用 `-PidePath=...` 替代 `IDE_HOME`。Maven Central 不可访问时，显式指定所选镜像，例如 `-PmavenMirror=https://maven.aliyun.com/repository/central`；默认不启用镜像。
+
+插件 ZIP 输出到 `build/distributions/`。在 IDE 的 **Settings > Plugins > 齿轮菜单 > Install Plugin from Disk** 中安装。使用 `gradlew.bat runIde` 可启动独立开发 IDE，使用构建沙箱而非日常配置。
+
+原生集成测试在 `build/native-tests/` 中创建自己的文件占用进程，验证识别和选择性结束，最后仅回收这些测试进程。测试目标均为生成的测试文件。
+
+## IDE 冒烟检查
+
+在相同环境下执行 `gradlew.bat -PideSmoke runIde`，通过独立 AS 沙箱加载仅用于测试的应用入口，检查工具栏和 Provider 注册、原生扫描、取消、选择保持、详情复制、清空、控件状态和双语弹窗渲染，将结果及 PNG 写入 `build/ide-smoke/`，然后退出。打包时不使用 `-PideSmoke`，`buildPlugin` 会拒绝此组合。

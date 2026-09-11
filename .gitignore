@@ -1,0 +1,11 @@
+.idea/
+.gradle/
+.intellijPlatform/
+.kotlin/
+**/build/
+**/out/
+*.iml
+local.properties
+.vs/
+CMakeUserPresets.json
+cmake-build-*/

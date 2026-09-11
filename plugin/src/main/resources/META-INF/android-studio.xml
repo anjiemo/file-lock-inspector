@@ -1,0 +1,5 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.android.tools.idea.gradle">
+        <errorQuickFixProvider implementation="io.github.anjiemo.filelockinspector.android.AndroidLockQuickFixProvider"/>
+    </extensions>
+</idea-plugin>

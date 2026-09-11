@@ -1,0 +1,5 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="org.jetbrains.plugins.gradle">
+        <issueChecker implementation="io.github.anjiemo.filelockinspector.GradleLockIssueChecker"/>
+    </extensions>
+</idea-plugin>
