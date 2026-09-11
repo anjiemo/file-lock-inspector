@@ -28,6 +28,30 @@ class IdeSmokeStarter : ApplicationStarter {
             check(PluginManagerCore.getPlugin(PluginId.getId("io.github.anjiemo.filelockinspector"))?.isEnabled == true)
             val provider = GradleErrorQuickFixProvider.getProviders().single { it.javaClass.name.endsWith("AndroidLockQuickFixProvider") }
             val project = ProjectManager.getInstance().defaultProject
+            val windowExtension = com.intellij.openapi.wm.ToolWindowEP.EP_NAME.extensionList.single { it.id == InspectorToolWindow.ID }
+            check(windowExtension.anchor == "right" && windowExtension.canCloseContents)
+            check(windowExtension.factoryClass == InspectorToolWindowFactory::class.java.name)
+            val queryManager = com.intellij.ui.content.ContentFactory.getInstance().createContentManager(true, project)
+            val testWindow = java.lang.reflect.Proxy.newProxyInstance(javaClass.classLoader,
+                arrayOf(com.intellij.openapi.wm.ToolWindow::class.java)) { _, method, _ ->
+                when (method.name) {
+                    "getContentManager" -> queryManager
+                    else -> error("Unexpected tool window call: ${method.name}")
+                }
+            } as com.intellij.openapi.wm.ToolWindow
+            try {
+                InspectorToolWindowFactory().createToolWindowContent(project, testWindow)
+                check(queryManager.contentCount == 1)
+                val emptyContent = queryManager.contents.single()
+                InspectorToolWindow.addQuery(project, testWindow, output.resolve("first.jar").toString(), null)
+                check(queryManager.contentCount == 1 && com.intellij.openapi.util.Disposer.isDisposed(emptyContent))
+                InspectorToolWindow.addQuery(project, testWindow, output.resolve("second.jar").toString(), null)
+                check(queryManager.contentCount == 2)
+                val selectedContent = checkNotNull(queryManager.selectedContent)
+                check(selectedContent.displayName == "second.jar" && selectedContent.isCloseable)
+                queryManager.removeContent(selectedContent, true)
+                check(com.intellij.openapi.util.Disposer.isDisposed(selectedContent) && queryManager.contentCount == 1)
+            } finally { com.intellij.openapi.util.Disposer.dispose(queryManager) }
             val actionManager = com.intellij.openapi.actionSystem.ActionManager.getInstance()
             val inspectAction = checkNotNull(actionManager.getAction("FileLockInspector.Inspect"))
             val toolbar = actionManager.getAction("MainToolbarRight") as com.intellij.openapi.actionSystem.DefaultActionGroup
@@ -44,6 +68,14 @@ class IdeSmokeStarter : ApplicationStarter {
                 icon.paintIcon(null, graphics, 12, 12); graphics.dispose()
                 check((0 until 40).any { x -> (0 until 40).any { y -> image.getRGB(x, y) != background.rgb } })
                 ImageIO.write(image, "png", output.resolve("toolbar-icon$suffix.png").toFile())
+                val selected = Class.forName("com.intellij.ui.icons.StrokeKt").getMethod("toStrokeIcon", javax.swing.Icon::class.java, java.awt.Color::class.java)
+                    .invoke(null, icon, java.awt.Color.WHITE) as javax.swing.Icon
+                val selectedImage = BufferedImage(40, 40, BufferedImage.TYPE_INT_RGB)
+                val selectedGraphics = selectedImage.createGraphics()
+                selectedGraphics.color = java.awt.Color(0x3574F0); selectedGraphics.fillRect(0, 0, 40, 40)
+                selected.paintIcon(null, selectedGraphics, 12, 12); selectedGraphics.dispose()
+                check((0 until 40).sumOf { x -> (0 until 40).count { y -> selectedImage.getRGB(x, y) == java.awt.Color.WHITE.rgb } } > 5)
+                ImageIO.write(selectedImage, "png", output.resolve("toolbar-icon-selected$suffix.png").toFile())
             }
             val file = Files.createTempFile(output, "smoke-", ".jar")
             val snapshot = java.io.RandomAccessFile(file.toFile(), "rw").use {
@@ -90,9 +122,9 @@ class IdeSmokeStarter : ApplicationStarter {
                         ImageIO.write(image, "png", output.resolve("settings-$language-$width.png").toFile())
                     }
                 } finally { configurable.disposeUIResources() }
-                val dialog = InspectorDialog(project, "")
+                val dialog = InspectorPanel(project, "")
                 try {
-                    val panel = dialog.contentPane
+                    val panel = dialog.component
                     fun renderDialog(name: String, width: Int, height: Int) {
                         panel.setSize(width, height)
                         fun layout(container: Container) { container.doLayout(); container.components.filterIsInstance<Container>().forEach(::layout) }
@@ -149,6 +181,32 @@ class IdeSmokeStarter : ApplicationStarter {
                     }
                     renderDialog("dialog-$language.png", 920, 530)
                     renderDialog("dialog-compact-$language.png", 720, 520)
+                    renderDialog("tool-window-narrow-$language.png", 360, 600)
+                    val splitter = dialog.javaClass.getDeclaredField("resultsSplitter").apply { isAccessible = true }.get(dialog) as com.intellij.ui.JBSplitter
+                    val divider = splitter.divider
+                    val initialProportion = splitter.proportion
+                    check(divider.isVisible && divider.cursor.type == java.awt.Cursor.N_RESIZE_CURSOR)
+                    fun pointer(id: Int, y: Int, button: Int = java.awt.event.MouseEvent.NOBUTTON) {
+                        divider.dispatchEvent(java.awt.event.MouseEvent(divider, id, System.currentTimeMillis(),
+                            if (id == java.awt.event.MouseEvent.MOUSE_DRAGGED) java.awt.event.InputEvent.BUTTON1_DOWN_MASK else 0,
+                            divider.width / 2, y, 1, false, button))
+                    }
+                    fun dividerPixel(): Int {
+                        val image = BufferedImage(divider.width, divider.height, BufferedImage.TYPE_INT_RGB)
+                        val graphics = image.createGraphics(); divider.paint(graphics); graphics.dispose()
+                        return image.getRGB(divider.width / 2, divider.height / 2)
+                    }
+                    val idlePixel = dividerPixel()
+                    pointer(java.awt.event.MouseEvent.MOUSE_ENTERED, 2)
+                    check(dividerPixel() != idlePixel)
+                    renderDialog("tool-window-divider-hover-$language.png", 360, 600)
+                    pointer(java.awt.event.MouseEvent.MOUSE_PRESSED, 2, java.awt.event.MouseEvent.BUTTON1)
+                    pointer(java.awt.event.MouseEvent.MOUSE_DRAGGED, 62)
+                    pointer(java.awt.event.MouseEvent.MOUSE_RELEASED, 62, java.awt.event.MouseEvent.BUTTON1)
+                    check(kotlin.math.abs(splitter.proportion - initialProportion) > 0.03f)
+                    check(table.selectedRowCount == 1 && details.text.isNotEmpty())
+                    renderDialog("tool-window-divider-dragged-$language.png", 360, 600)
+                    splitter.proportion = initialProportion
                     val clear = dialog.javaClass.getDeclaredField("clear").apply { isAccessible = true }.get(dialog) as javax.swing.JButton
                     for (name in listOf("refresh", "cancel", "clear", "browse", "copyDetails")) {
                         val button = dialog.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(dialog) as javax.swing.JButton
@@ -198,7 +256,11 @@ class IdeSmokeStarter : ApplicationStarter {
                     check(status.text == Text.get("ready"))
                     renderDialog("dialog-cleared-$language.png", 720, 520)
                     check(table.getColumnName(0) == if (language == "ZH") "进程" else "Process")
-                } finally { dialog.disposeIfNeeded() }
+                    val cancellation = Cancellation()
+                    dialog.javaClass.getDeclaredField("token").apply { isAccessible = true }.set(dialog, cancellation)
+                    com.intellij.openapi.util.Disposer.dispose(dialog)
+                    check(cancellation.cancelled.get())
+                } finally { if (!com.intellij.openapi.util.Disposer.isDisposed(dialog)) com.intellij.openapi.util.Disposer.dispose(dialog) }
             }
             settings.state.language = "IDE"
             Files.writeString(output.resolve("result.txt"), "PASS: plugin loading, AS provider registration and quick fix, GradleIssueData compatibility, bundled native scan, cancellation with partial results, IDE protection, English and Chinese dialog rendering")

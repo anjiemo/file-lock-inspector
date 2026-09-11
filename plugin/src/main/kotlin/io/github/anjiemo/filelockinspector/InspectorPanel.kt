@@ -8,10 +8,9 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ide.CopyPasteManager
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
@@ -37,13 +36,16 @@ class InspectAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val file = e.getData(CommonDataKeys.VIRTUAL_FILE)?.takeUnless { it.isDirectory }?.path ?: ""
-        InspectorDialog(project, file).show()
+        InspectorToolWindow.open(project, file)
     }
 }
 
 data class BuildRestart(val action: AnAction, val context: DataContext)
 
-class InspectorDialog(private val project: Project, initialPath: String, private val restart: BuildRestart? = null) : DialogWrapper(project, false) {
+class InspectorPanel(private val project: Project, initialPath: String, private var restart: BuildRestart? = null) : Disposable {
+    private var isDisposed = false
+    var onTargetChanged: (String) -> Unit = {}
+    val targetPath: String get() = fileField.text.trim().removeSurrounding("\"")
     private val fileField = JTextField(initialPath)
     private val status = JLabel(Text.get("ready")).apply {
         addPropertyChangeListener("text") { toolTipText = text }
@@ -55,6 +57,27 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         font = UIManager.getFont("Label.font")
     }
     private val detailsPanel = JPanel(BorderLayout(0, JBUI.scale(6))).apply { isVisible = false }
+    private val resultsSplitter = com.intellij.ui.JBSplitter(true, "FileLockInspector.resultsProportion", 0.6f).apply {
+        dividerWidth = JBUI.scale(8)
+        setHonorComponentsMinimumSize(true)
+        setAllowSwitchOrientationByMouseClick(false)
+        var hovered = false
+        var dragging = false
+        divider.border = object : javax.swing.border.AbstractBorder() {
+            override fun paintBorder(c: java.awt.Component, g: java.awt.Graphics, x: Int, y: Int, width: Int, height: Int) {
+                g.color = if (hovered || dragging) com.intellij.ui.JBColor.namedColor("Component.focusColor", com.intellij.ui.JBColor(0x3574F0, 0x548AF7))
+                    else com.intellij.ui.JBColor.border()
+                val thickness = JBUI.scale(if (hovered || dragging) 2 else 1)
+                g.fillRect(x, y + (height - thickness) / 2, width, thickness)
+            }
+        }
+        divider.addMouseListener(object : java.awt.event.MouseAdapter() {
+            override fun mouseEntered(e: java.awt.event.MouseEvent) { hovered = true; divider.repaint() }
+            override fun mouseExited(e: java.awt.event.MouseEvent) { hovered = false; divider.repaint() }
+            override fun mousePressed(e: java.awt.event.MouseEvent) { if (SwingUtilities.isLeftMouseButton(e)) dragging = true; divider.repaint() }
+            override fun mouseReleased(e: java.awt.event.MouseEvent) { dragging = false; hovered = divider.contains(e.point); divider.repaint() }
+        })
+    }
     private val historical = JCheckBox(Text.get("history")).apply { isEnabled = false; isVisible = false }
     private var scannedPath: String? = null
     private var current: Snapshot? = null
@@ -135,11 +158,23 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         }
     }
 
+    private val rebuildButton = commandButton(rebuild)
+    val component: JComponent
+
+    private fun commandButton(action: Action) = JButton(action).apply {
+        text = null
+        toolTipText = action.getValue(Action.NAME) as String
+        accessibleContext.accessibleName = toolTipText
+        isRequestFocusEnabled = false
+        isDefaultCapable = false
+        preferredSize = JBUI.size(30, 30)
+        minimumSize = preferredSize
+    }
+
     init {
-        title = "File Lock Inspector"
-        isResizable = true
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION)
         table.autoCreateRowSorter = true
+        table.autoResizeMode = JTable.AUTO_RESIZE_OFF
         table.rowHeight = JBUI.scale(28)
         table.setShowGrid(false)
         table.emptyText.text = Text.get("emptyResults")
@@ -154,11 +189,9 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         fileField.addActionListener { scan() }
         historical.addActionListener { display(if (historical.isSelected) history else current); updateSelection() }
         installDetailsMenu()
-        init()
-        window?.minimumSize = JBUI.size(720, 520)
-        Disposer.register(disposable) { token?.cancel() }
-        Disposer.register(project, disposable)
-        Diagnostics.get(project).subscribe(disposable) { path, snapshot ->
+        component = createCenterPanel()
+        rebuildButton.isVisible = restart != null
+        Diagnostics.get(project).subscribe(this) { path, snapshot ->
             later {
                 if (scannedPath == Diagnostics.pathKey(path)) {
                     history = snapshot
@@ -170,42 +203,61 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         if (initialPath.isNotBlank()) later { scan() }
     }
 
-    override fun createActions(): Array<Action> = buildList {
-        if (restart != null) add(rebuild)
-        add(terminate)
-        add(cancelAction.apply {
-            putValue(Action.NAME, Text.get("close"))
-            putValue(DEFAULT_ACTION, true)
-        })
-    }.toTypedArray()
-    override fun getPreferredFocusedComponent(): JComponent = fileField
-    override fun createCenterPanel(): JComponent = JPanel(BorderLayout(0, JBUI.scale(12))).apply {
-        preferredSize = JBUI.size(900, 460)
-        minimumSize = JBUI.size(640, 340)
-        add(JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
-            add(JLabel(Text.get("file")).apply { labelFor = fileField }, BorderLayout.WEST)
-            add(fileField, BorderLayout.CENTER)
-            add(JPanel(FlowLayout(FlowLayout.RIGHT, JBUI.scale(4), 0)).apply { add(browse); add(refresh); add(cancel); add(clear) }, BorderLayout.EAST)
+    fun updateRestart(value: BuildRestart?) {
+        if (value != null) {
+            restart = value
+            rebuildButton.isVisible = true
+            rebuild.isEnabled = !busy
+        }
+    }
+
+    override fun dispose() {
+        isDisposed = true
+        generation++
+        token?.cancel()
+        restart = null
+        resultsSplitter.dispose()
+    }
+
+    private fun createCenterPanel(): JComponent = JPanel(BorderLayout(0, JBUI.scale(8))).apply {
+        border = JBUI.Borders.empty(8)
+        preferredSize = JBUI.size(460, 560)
+        minimumSize = JBUI.size(280, 240)
+        add(JPanel(BorderLayout(0, JBUI.scale(4))).apply {
+            add(JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
+                add(JLabel(Text.get("file")).apply { labelFor = fileField }, BorderLayout.WEST)
+                add(fileField, BorderLayout.CENTER)
+            }, BorderLayout.NORTH)
+            add(JPanel(FlowLayout(FlowLayout.LEFT, JBUI.scale(4), 0)).apply {
+                add(browse); add(refresh); add(cancel); add(clear)
+                add(commandButton(terminate)); add(rebuildButton)
+            }, BorderLayout.CENTER)
         }, BorderLayout.NORTH)
-        val tableScroll = JBScrollPane(table).apply { setColumnHeaderView(table.tableHeader) }
+        val tableScroll = JBScrollPane(table).apply {
+            setColumnHeaderView(table.tableHeader)
+            minimumSize = JBUI.size(0, 70)
+        }
+        detailsPanel.minimumSize = JBUI.size(0, 100)
         detailsPanel.add(JPanel(BorderLayout()).apply {
             add(JLabel(Text.get("processDetails")), BorderLayout.WEST)
             add(copyDetails, BorderLayout.EAST)
         }, BorderLayout.NORTH)
         detailsPanel.add(JBScrollPane(details).apply {
             preferredSize = JBUI.size(0, 160)
+            minimumSize = JBUI.size(0, 80)
             border = JBUI.Borders.empty()
         }, BorderLayout.CENTER)
         details.border = JBUI.Borders.empty(4, 0)
         details.background = UIManager.getColor("Panel.background")
-        add(JPanel(BorderLayout(0, JBUI.scale(10))).apply {
+        resultsSplitter.firstComponent = JPanel(BorderLayout(0, JBUI.scale(8))).apply {
             add(JPanel(BorderLayout()).apply {
                 add(JLabel(Text.get("processes")), BorderLayout.WEST)
                 add(historical, BorderLayout.EAST)
             }, BorderLayout.NORTH)
             add(tableScroll, BorderLayout.CENTER)
-            add(detailsPanel, BorderLayout.SOUTH)
-        }, BorderLayout.CENTER)
+        }
+        resultsSplitter.secondComponent = detailsPanel
+        add(resultsSplitter, BorderLayout.CENTER)
         add(JPanel(BorderLayout()).apply {
             add(status, BorderLayout.CENTER)
         }, BorderLayout.SOUTH)
@@ -249,6 +301,7 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         val valid = runCatching { Path.of(file).isAbsolute && !file.startsWith("\\\\") }.getOrDefault(false)
         if (!valid) { status.text = Text.status("invalidPath"); return }
         fileField.text = file
+        onTargetChanged(file)
         scannedPath = Diagnostics.pathKey(file)
         history = Diagnostics.get(project).previous(file)
         historical.isSelected = false

@@ -28,7 +28,7 @@ Build-error capture allows at most two concurrent scans, deduplicates recent rec
 
 Background results update the table on the IDE event thread. Scan completion preserves valid selections by PID, start time, and file ID. Table replacement batches detail updates, and unchanged detail text retains its text selection.
 
-Details support full and single-entry copying. Clear resets only dialog state. Icon buttons use IDE controls, scaled dimensions, and localized tooltips; mouse clicks retain existing focus while keyboard navigation remains available.
+Details support full and single-entry copying. Clear resets only query tab state. Icon buttons use IDE controls, scaled dimensions, and localized tooltips; mouse clicks retain existing focus while keyboard navigation remains available.
 
 Termination rechecks process identity, file identity, and current usage. Creation time is verified on the same process handle used for termination. The helper waits up to five seconds for exit, followed by another scan. The IDE supplies the original-build retry action, which the user triggers separately.
 

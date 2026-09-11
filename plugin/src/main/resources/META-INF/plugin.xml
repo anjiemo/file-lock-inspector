@@ -3,6 +3,7 @@
     <depends optional="true" config-file="gradle.xml">com.intellij.gradle</depends>
     <depends optional="true" config-file="android-studio.xml">org.jetbrains.android</depends>
     <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="File Lock Inspector" anchor="right" icon="/icons/fileLock.svg" factoryClass="io.github.anjiemo.filelockinspector.InspectorToolWindowFactory" canCloseContents="true"/>
         <applicationConfigurable parentId="tools" instance="io.github.anjiemo.filelockinspector.LanguageConfigurable" id="filelockinspector.settings" displayName="File Lock Inspector"/>
     </extensions>
     <actions>

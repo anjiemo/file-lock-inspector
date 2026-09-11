@@ -13,7 +13,7 @@ File Lock Inspector diagnoses local Windows file usage inside the IDE, with proc
 
 ## Scanning and Results
 
-Select a file or paste its absolute local path, then click Refresh or press Enter in the path field. Opening the dialog with a file path starts a scan automatically. Paths support spaces and Chinese characters.
+Select a file or paste its absolute local path, then click Refresh or press Enter in the path field. Opening the query tab with a file path starts a scan automatically. Paths support spaces and Chinese characters.
 
 Background scans stream rows into the process list, showing process name, PID, owner, start time, and operation status. Columns support sorting and the list supports multiple selection. When scanning finishes, selections with the same PID, start time, and file identity remain selected.
 
@@ -38,9 +38,9 @@ Details support wrapping, scrolling, and text selection. The header copy icon co
 
 ## Clearing and Build-error Snapshots
 
-**Clear results** resets the current dialog's list, details, selection, and status while retaining the file path. It does not delete files or terminate processes.
+**Clear results** resets the current query tab's list, details, selection, and status while retaining the file path. It does not delete files or terminate processes.
 
-After recognizing a build error, the plugin captures a timestamped background scan. **Build-error snapshot** appears only when the current file has a snapshot and updates automatically when capture completes. Switching is disabled during the current scan. Snapshots are read-only and cannot authorize termination. Manual scans do not create build-error snapshots; clearing the dialog retains saved project snapshots.
+After recognizing a build error, the plugin captures a timestamped background scan. **Build-error snapshot** appears only when the current file has a snapshot and updates automatically when capture completes. Switching is disabled during the current scan. Snapshots are read-only and cannot authorize termination. Manual scans do not create build-error snapshots; clearing the query tab retains saved project snapshots.
 
 ## Termination and Rebuilding
 
@@ -48,7 +48,7 @@ Termination requires explicit selection and confirmation. The helper rechecks pr
 
 Only selected processes are terminated; child processes are not automatically included. Forced termination can lose unsaved content. The plugin waits for the outcome and scans again.
 
-When opened from a build error with a single original-build retry action supplied by the IDE, the dialog provides **Rerun Original Build** as a separate user action.
+When opened from a build error with a single original-build retry action supplied by the IDE, the query tab provides **Rerun Original Build** as a separate user action.
 
 ## UI Language
 

@@ -36,7 +36,7 @@ open class InspectQuickFix(private val files: List<String>) : BuildIssueQuickFix
                         files.getOrNull(selection)
                     }
                     val actions = BuildView.RESTART_ACTIONS.getData(dataContext).orEmpty()
-                    if (file != null) InspectorDialog(project, file, actions.singleOrNull()?.let { BuildRestart(it, dataContext) }).show()
+                    if (file != null) InspectorToolWindow.open(project, file, actions.singleOrNull()?.let { BuildRestart(it, dataContext) })
                 }
                 future.complete(null)
             }

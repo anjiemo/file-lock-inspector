@@ -52,4 +52,4 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File native/windows/tests/int
 
 ## IDE 冒烟检查
 
-在相同环境下执行 `gradlew.bat -PideSmoke runIde`，通过独立 AS 沙箱加载仅用于测试的应用入口，检查工具栏和 Provider 注册、原生扫描、取消、选择保持、详情复制、清空、控件状态和双语弹窗渲染，将结果及 PNG 写入 `build/ide-smoke/`，然后退出。打包时不使用 `-PideSmoke`，`buildPlugin` 会拒绝此组合。
+在相同环境下执行 `gradlew.bat -PideSmoke runIde`，通过独立 AS 沙箱加载仅用于测试的应用入口，检查工具栏和 Provider 注册、原生扫描、取消、选择保持、详情复制、清空、控件状态和双语查询页渲染，将结果及 PNG 写入 `build/ide-smoke/`，然后退出。打包时不使用 `-PideSmoke`，`buildPlugin` 会拒绝此组合。

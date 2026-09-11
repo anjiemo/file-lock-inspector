@@ -2,14 +2,22 @@
 
 English | [简体中文](../zh-CN/troubleshooting.md)
 
+## Tool Window
+
+File Lock Inspector opens in the right tool window bar. Use the IDE's window menu to switch between docked, floating, and windowed modes or move it to another edge. The IDE saves the window layout.
+
+Hiding the tool window preserves query results and running tasks. Closing a query tab cancels its task and releases its resources. Different files can be inspected in separate tabs; opening an existing target selects its tab without restarting the scan. Refresh starts a new scan. Narrow views provide horizontal scrolling for the process table.
+
 ## Toolbar
+
+Drag the divider between the process list and details to adjust their height ratio. Hovering highlights the divider and shows a vertical resize cursor. The ratio is remembered; the list fills the space when details are hidden.
 
 | Control | Behavior |
 | --- | --- |
 | Select file | Opens the IDE file chooser and scans the selected file |
 | Refresh | Scans the current path |
 | Cancel scan | Stops the current helper and retains received process results |
-| Clear results | Clears the dialog while retaining the path |
+| Clear results | Clears the query tab while retaining the path |
 
 Cancel is available only during scanning or process operations. Its tooltip changes to **Cancel remaining operations** while ending processes; termination already requested is not undone. Refresh, Browse, and Clear are disabled during these operations.
 

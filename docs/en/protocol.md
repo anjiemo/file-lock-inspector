@@ -16,4 +16,4 @@ file-lock-inspector-helper.exe --version
 
 `operation` records contain `pid` and `status`. Termination verifies process creation time on the handle used for the operation, rejects protected or unclassified targets, verifies file identity and current usage, terminates only the selected process, and waits up to five seconds for exit. Occupancy can still change after verification. An accepted termination request alone is not success.
 
-The parent treats malformed responses, unsupported protocol versions, missing final records, and helper failures as failures. It kills and reaps its own helper on cancellation, timeout, dialog disposal, or project disposal. Existing scan results never authorize termination without another native check.
+The parent treats malformed responses, unsupported protocol versions, missing final records, and helper failures as failures. It kills and reaps its own helper on cancellation, timeout, query tab disposal, or project disposal. Existing scan results never authorize termination without another native check.

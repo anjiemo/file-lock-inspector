@@ -14,7 +14,7 @@ Install `build/distributions/file-lock-inspector-{{VERSION}}.zip` through **Sett
 
 ## Usage
 
-Click the lock-and-person icon before Search in the main toolbar to open File Lock Inspector. Its tooltip is **Inspect File Usage**.
+Click the lock-and-person icon before Search in the main toolbar to open the File Lock Inspector tool window on the right. Its tooltip is **Inspect File Usage**. Use the IDE window menu to switch docked, floating, or windowed modes and change the anchor. Hiding preserves results; closing a query tab cancels its task.
 
 Open **Tools > Inspect File Usage**, select a file or paste its absolute path, and refresh the results. Recognized Gradle sharing-violation errors also provide a diagnosis link. Select processes explicitly before ending them. **Build-error snapshot** appears automatically when a background capture becomes available; it is read-only and cannot authorize termination.
 

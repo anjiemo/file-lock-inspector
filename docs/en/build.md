@@ -52,4 +52,4 @@ The build injects release metadata into the packaged `plugin.xml` from these con
 
 ## IDE Smoke Check
 
-Run `gradlew.bat -PideSmoke runIde` with the same environment to load a test-only application entry in an isolated AS sandbox. It checks toolbar and provider registration, native scanning, cancellation, process selection retention, detail copying, clearing, control states, and bilingual dialog rendering, writes `build/ide-smoke/result.txt` and PNGs, then exits. Do not use `-PideSmoke` when packaging; `buildPlugin` rejects that combination.
+Run `gradlew.bat -PideSmoke runIde` with the same environment to load a test-only application entry in an isolated AS sandbox. It checks toolbar and provider registration, native scanning, cancellation, process selection retention, detail copying, clearing, control states, and bilingual tool window rendering, writes `build/ide-smoke/result.txt` and PNGs, then exits. Do not use `-PideSmoke` when packaging; `buildPlugin` rejects that combination.
