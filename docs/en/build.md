@@ -30,6 +30,22 @@ The native integration test creates its own file holders under `build/native-tes
 
 ## Version and Documentation
 
+Build configuration is organized by responsibility:
+
+| File | Contents |
+| --- | --- |
+| `version.properties` | Shared plugin and native helper version |
+| `config/plugin.properties` | Plugin ID, name, Maven group, and vendor |
+| `config/compatibility.properties` | Supported IDE build range |
+| `config/description.en.html` | English plugin description |
+| `config/description.zh-CN.html` | Simplified Chinese plugin description |
+| `gradle/documentation.gradle.kts` | Documentation rendering and archive tasks |
+| `gradle/native.gradle.kts` | Native helper compilation and bundled resources |
+| `build.gradle.kts` | SDK, dependencies, compilation, testing, and configuration wiring |
+| `plugin/src/main/resources/META-INF/plugin.xml` | Platform dependencies, extension points, and actions |
+
+The build injects release metadata into the packaged `plugin.xml` from these configuration files. Both descriptions are combined into one bilingual description displayed by the IDE and Marketplace.
+
 `version.properties` supplies the plugin and native helper versions. `gradlew.bat renderDocumentation` replaces `{{VERSION}}` in Markdown and produces a complete documentation directory under `build/rendered-docs/`, including license and attribution files. Each generation removes stale output files.
 
 `gradlew.bat buildPlugin` also generates the documentation archive `build/distributions/file-lock-inspector-docs-{{VERSION}}.zip`. Open its README to browse documentation with the resolved version. Repository Markdown is the source template; GitHub does not evaluate its placeholders.

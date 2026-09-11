@@ -1,8 +1,4 @@
 <idea-plugin>
-    <id>io.github.anjiemo.filelockinspector</id>
-    <name>File Lock Inspector</name>
-    <vendor url="https://github.com/anjiemo">anjiemo</vendor>
-    <description><![CDATA[Diagnose Windows file usage from Gradle build errors or a selected file. Inspect detected processes and explicitly terminate selected processes.]]></description>
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="gradle.xml">com.intellij.gradle</depends>
     <depends optional="true" config-file="android-studio.xml">org.jetbrains.android</depends>

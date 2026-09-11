@@ -30,6 +30,22 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File native/windows/tests/int
 
 ## 版本与文档
 
+构建配置按职责组织：
+
+| 文件 | 内容 |
+| --- | --- |
+| `version.properties` | 插件和原生辅助程序共用的版本号 |
+| `config/plugin.properties` | 插件 ID、名称、Maven 分组及作者信息 |
+| `config/compatibility.properties` | 支持的 IDE 构建版本范围 |
+| `config/description.en.html` | 英文插件介绍 |
+| `config/description.zh-CN.html` | 简体中文插件介绍 |
+| `gradle/documentation.gradle.kts` | 文档渲染和压缩包任务 |
+| `gradle/native.gradle.kts` | 原生辅助程序编译及资源打包 |
+| `build.gradle.kts` | SDK、依赖、编译、测试和配置组装 |
+| `plugin/src/main/resources/META-INF/plugin.xml` | 平台依赖、扩展点和操作入口 |
+
+构建时从上述配置文件读取发布资料，并注入安装包中的 `plugin.xml`。两种语言的介绍合并为双语描述，在 IDE 和插件市场中同时展示。
+
 `version.properties` 统一提供插件和原生辅助程序的版本号。`gradlew.bat renderDocumentation` 替换 Markdown 中的 `{{VERSION}}`，在 `build/rendered-docs/` 生成完整文档目录，包含许可证和第三方说明。每次生成都会清理失效的旧文件。
 
 `gradlew.bat buildPlugin` 同时生成文档压缩包 `build/distributions/file-lock-inspector-docs-{{VERSION}}.zip`。打开其中的 README 可浏览已填入版本号的文档。仓库 Markdown 是源模板，GitHub 不会计算其中的占位符。
