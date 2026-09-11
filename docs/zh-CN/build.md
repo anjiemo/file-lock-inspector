@@ -28,6 +28,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File native/windows/tests/int
 
 原生集成测试在 `build/native-tests/` 中创建自己的文件占用进程，验证识别和选择性结束，最后仅回收这些测试进程。测试目标均为生成的测试文件。
 
+## 版本与文档
+
+`version.properties` 统一提供插件和原生辅助程序的版本号。`gradlew.bat renderDocumentation` 替换 Markdown 中的 `{{VERSION}}`，在 `build/rendered-docs/` 生成完整文档目录，包含许可证和第三方说明。每次生成都会清理失效的旧文件。
+
+`gradlew.bat buildPlugin` 同时生成文档压缩包 `build/distributions/file-lock-inspector-docs-{{VERSION}}.zip`。打开其中的 README 可浏览已填入版本号的文档。仓库 Markdown 是源模板，GitHub 不会计算其中的占位符。
+
 ## IDE 冒烟检查
 
 在相同环境下执行 `gradlew.bat -PideSmoke runIde`，通过独立 AS 沙箱加载仅用于测试的应用入口，检查工具栏和 Provider 注册、原生扫描、取消、选择保持、详情复制、清空、控件状态和双语弹窗渲染，将结果及 PNG 写入 `build/ide-smoke/`，然后退出。打包时不使用 `-PideSmoke`，`buildPlugin` 会拒绝此组合。

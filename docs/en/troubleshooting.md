@@ -11,7 +11,7 @@ English | [简体中文](../zh-CN/troubleshooting.md)
 | Cancel scan | Stops the current helper and retains received process results |
 | Clear results | Clears the dialog while retaining the path |
 
-Cancel is available only during scanning or process operations. Cancelling a process operation stops subsequent processing; termination already requested is not undone. Refresh, Browse, and Clear are disabled during these operations.
+Cancel is available only during scanning or process operations. Its tooltip changes to **Cancel remaining operations** while ending processes; termination already requested is not undone. Refresh, Browse, and Clear are disabled during these operations.
 
 ## Scan Status
 
@@ -27,6 +27,8 @@ Cancel is available only during scanning or process operations. Cancelling a pro
 | Access denied | Current permissions do not allow the query or operation |
 | Invalid path or unsupported target | Input is outside the local single-file scope |
 | Identity unavailable | Required file or process identity could not be obtained |
+| Cannot prepare or start the helper | The helper could not be extracted or launched; details are recorded in IDE logs |
+| Invalid helper response | The helper returned an unexpected response; details are recorded in IDE logs |
 
 The status bar shows query time, process count, and skipped checks. Its tooltip contains the full status text. An empty list means the query returned no matching processes.
 

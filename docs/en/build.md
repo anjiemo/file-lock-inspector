@@ -28,6 +28,12 @@ The plugin ZIP is written under `build/distributions/`. Install it through the I
 
 The native integration test creates its own file holders under `build/native-tests/`, tests identification and selected termination, and cleans up only its own processes. The test targets are generated fixtures.
 
+## Version and Documentation
+
+`version.properties` supplies the plugin and native helper versions. `gradlew.bat renderDocumentation` replaces `{{VERSION}}` in Markdown and produces a complete documentation directory under `build/rendered-docs/`, including license and attribution files. Each generation removes stale output files.
+
+`gradlew.bat buildPlugin` also generates the documentation archive `build/distributions/file-lock-inspector-docs-{{VERSION}}.zip`. Open its README to browse documentation with the resolved version. Repository Markdown is the source template; GitHub does not evaluate its placeholders.
+
 ## IDE Smoke Check
 
 Run `gradlew.bat -PideSmoke runIde` with the same environment to load a test-only application entry in an isolated AS sandbox. It checks toolbar and provider registration, native scanning, cancellation, process selection retention, detail copying, clearing, control states, and bilingual dialog rendering, writes `build/ide-smoke/result.txt` and PNGs, then exits. Do not use `-PideSmoke` when packaging; `buildPlugin` rejects that combination.

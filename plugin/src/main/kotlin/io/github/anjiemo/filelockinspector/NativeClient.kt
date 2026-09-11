@@ -35,6 +35,7 @@ class Cancellation {
 }
 
 object NativeClient {
+    private val log = com.intellij.openapi.diagnostic.Logger.getInstance(NativeClient::class.java)
     private val timers get() = AppExecutorUtil.getAppScheduledExecutorService()
     @Synchronized private fun helper(): Path {
         val bytes = NativeClient::class.java.getResourceAsStream("/native/windows-x64/file-lock-inspector-helper.exe")?.use { it.readBytes() }
@@ -62,12 +63,19 @@ object NativeClient {
         var skipped = 0
         var finished = false
         var process: Process? = null
+        var errorOutput: Path? = null
+        var failureStatus = "helperUnavailable"
         val timedOut = AtomicBoolean(false)
         var deadline: java.util.concurrent.ScheduledFuture<*>? = null
         try {
             if (token.cancelled.get()) return Snapshot(rows, "cancelled")
-            val child = ProcessBuilder(listOf(helper().toString()) + args).redirectError(ProcessBuilder.Redirect.DISCARD).start()
+            val executable = helper()
+            failureStatus = "helperStartFailed"
+            val stderr = Files.createTempFile("file-lock-inspector-", ".stderr")
+            errorOutput = stderr
+            val child = ProcessBuilder(listOf(executable.toString()) + args).redirectError(stderr.toFile()).start()
             process = child
+            failureStatus = "invalidResponse"
             token.attach(child)
             deadline = timers.schedule({ timedOut.set(true); child.destroyForcibly() }, 30, TimeUnit.SECONDS)
             child.inputStream.bufferedReader(Charsets.UTF_8).useLines { lines ->
@@ -90,12 +98,27 @@ object NativeClient {
             child.waitFor(2, TimeUnit.SECONDS)
             if (child.isAlive || (!finished && !timedOut.get() && !token.cancelled.get())) status = "failed"
             if (!child.isAlive && child.exitValue() != 0 && status in listOf("complete", "partial", "terminated")) status = "failed"
-        } catch (_: Exception) { status = "failed" }
+        } catch (error: Exception) {
+            status = failureStatus
+            if (!token.cancelled.get() && !timedOut.get()) log.warn("Native ${args.first()} failed ($status)", error)
+        }
         finally {
             deadline?.cancel(false)
             process?.let { if (it.isAlive) it.destroyForcibly(); it.waitFor(2, TimeUnit.SECONDS) }
+            errorOutput?.let { path ->
+                try {
+                    val stderr = Files.newBufferedReader(path).use { reader ->
+                        val buffer = CharArray(8192)
+                        val count = reader.read(buffer)
+                        if (count > 0) String(buffer, 0, count) else ""
+                    }
+                    if (stderr.isNotBlank()) log.warn("Native ${args.first()} stderr: $stderr")
+                } catch (error: Exception) { log.warn("Cannot read native diagnostics", error) }
+                finally { runCatching { Files.deleteIfExists(path) }.onFailure { log.warn("Cannot remove native diagnostics", it) } }
+            }
         }
         if (token.cancelled.get()) status = "cancelled" else if (timedOut.get()) status = "timeout"
+        if (status == "failed") log.warn("Native ${args.first()} failed; responseCompleted=$finished, exitCode=${process?.takeUnless { it.isAlive }?.exitValue()}")
         return Snapshot(rows.toList(), status, skipped = skipped)
     }
 }

@@ -223,7 +223,9 @@ struct Scan {
 
 int wmain(int argc, wchar_t** argv) {
     try {
-        if (argc == 2 && std::wstring(argv[1]) == L"--version") { emit({{"type", "version"}, {"version", "0.1.0"}}); return 0; }
+        #define FLI_STRINGIFY_IMPL(value) #value
+        #define FLI_STRINGIFY(value) FLI_STRINGIFY_IMPL(value)
+        if (argc == 2 && std::wstring(argv[1]) == L"--version") { emit({{"type", "version"}, {"version", FLI_STRINGIFY(FILE_LOCK_INSPECTOR_VERSION)}}); return 0; }
         if (argc < 4) { emit({{"type", "end"}, {"status", "invalidArguments"}}); return 2; }
         std::wstring command = argv[1], path = argv[2]; DWORD idePid = std::stoul(argv[3]);
         auto drivePath = path.rfind(L"\\\\?\\", 0) == 0 ? path.substr(4) : path;

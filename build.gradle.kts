@@ -21,20 +21,29 @@ repositories {
 val renderDocumentation by tasks.registering {
     val configuredVersion = version.toString()
     val sourceFiles = fileTree(".") {
-        include("README.md", "README.zh-CN.md", "docs/**/*.md")
+        include("README.md", "README.zh-CN.md", "docs/**", "LICENSE", "third-party-notices/**", "version.properties")
         exclude("build/**")
     }
     inputs.files(sourceFiles, "version.properties")
     outputs.dir(layout.buildDirectory.dir("rendered-docs"))
     doLast {
         val destination = layout.buildDirectory.dir("rendered-docs").get().asFile
+        delete(destination)
         sourceFiles.forEach { source ->
             val target = destination.resolve(source.relativeTo(projectDir).path)
             target.parentFile.mkdirs()
-            val rendered = source.readBytes().toString(Charsets.UTF_8).replace("{{VERSION}}", configuredVersion)
-            target.writeBytes(rendered.toByteArray(Charsets.UTF_8))
+            val bytes = source.readBytes()
+            target.writeBytes(if (source.extension == "md") bytes.toString(Charsets.UTF_8)
+                .replace("{{VERSION}}", configuredVersion).toByteArray(Charsets.UTF_8) else bytes)
         }
     }
+}
+
+val documentationZip by tasks.registering(Zip::class) {
+    dependsOn(renderDocumentation)
+    from(layout.buildDirectory.dir("rendered-docs"))
+    archiveBaseName.set("file-lock-inspector-docs")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
 }
 
 val ideHome = providers.gradleProperty("idePath").orElse(providers.environmentVariable("IDE_HOME"))
@@ -61,6 +70,7 @@ val buildNative by tasks.registering(Exec::class) {
     inputs.dir("native/windows/src")
     inputs.dir("native/windows/vendor")
     inputs.file("native/windows/build.ps1")
+    inputs.file("version.properties")
     outputs.file("native/windows/build/file-lock-inspector-helper.exe")
     commandLine("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "native/windows/build.ps1")
 }
@@ -91,6 +101,7 @@ tasks.patchPluginXml {
 }
 tasks.test { useJUnitPlatform() }
 tasks.buildPlugin {
+    dependsOn(documentationZip)
     doFirst { check(!providers.gradleProperty("ideSmoke").isPresent) { "Do not package smoke-test entry points. Omit -PideSmoke." } }
 }
 intellijPlatform {

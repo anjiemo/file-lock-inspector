@@ -154,12 +154,12 @@ class IdeSmokeStarter : ApplicationStarter {
                         val button = dialog.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(dialog) as javax.swing.JButton
                         check(!button.isRequestFocusEnabled && !button.isDefaultCapable && button.isFocusable)
                     }
-                    val setBusy = dialog.javaClass.getDeclaredMethod("setBusy", Boolean::class.javaPrimitiveType).apply { isAccessible = true }
+                    val setBusy = dialog.javaClass.getDeclaredMethod("setBusy", Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType).apply { isAccessible = true }
                     val snapshotToggle = dialog.javaClass.getDeclaredField("historical").apply { isAccessible = true }.get(dialog) as javax.swing.JCheckBox
                     dialog.javaClass.getDeclaredField("current").apply { isAccessible = true }.set(dialog, snapshot)
                     check(!snapshotToggle.isVisible)
                     val pathField = dialog.javaClass.getDeclaredField("scannedPath").apply { isAccessible = true }
-                    pathField.set(dialog, file.toString())
+                    pathField.set(dialog, Diagnostics.pathKey(file.toString()))
                     val diagnostics = Diagnostics.get(project)
                     val publish = diagnostics.javaClass.getDeclaredMethod("publish", String::class.java, Snapshot::class.java).apply { isAccessible = true }
                     fun publishAndDispatch(path: String) {
@@ -170,18 +170,23 @@ class IdeSmokeStarter : ApplicationStarter {
                     }
                     publishAndDispatch(file.toString() + ".other")
                     check(!snapshotToggle.isVisible)
-                    publishAndDispatch(file.toString())
+                    publishAndDispatch(file.toString().uppercase(java.util.Locale.ROOT).replace('\\', '/'))
+                    check(diagnostics.previous(file.toString()) == snapshot)
                     check(snapshotToggle.isVisible && snapshotToggle.isEnabled)
                     snapshotToggle.doClick()
                     check(snapshotToggle.isSelected)
                     snapshotToggle.doClick()
-                    setBusy.invoke(dialog, true)
+                    setBusy.invoke(dialog, true, false)
+                    val cancelButton = dialog.javaClass.getDeclaredField("cancel").apply { isAccessible = true }.get(dialog) as javax.swing.JButton
+                    check(cancelButton.toolTipText == Text.get("cancelScan"))
+                    setBusy.invoke(dialog, true, true)
+                    check(cancelButton.toolTipText == Text.get("cancelTermination"))
                     check(fileField.isEnabled && !fileField.isEditable)
                     check(!clear.isEnabled)
                     check(!snapshotToggle.isEnabled)
                     clear.doClick()
                     check(table.rowCount > 0)
-                    setBusy.invoke(dialog, false)
+                    setBusy.invoke(dialog, false, false)
                     check(fileField.isEnabled && fileField.isEditable)
                     clear.doClick()
                     check(table.rowCount == 0 && details.text.isEmpty() && fileField.text == file.toString())

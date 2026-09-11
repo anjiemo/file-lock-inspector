@@ -160,7 +160,7 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         Disposer.register(project, disposable)
         Diagnostics.get(project).subscribe(disposable) { path, snapshot ->
             later {
-                if (scannedPath == path) {
+                if (scannedPath == Diagnostics.pathKey(path)) {
                     history = snapshot
                     updateSnapshotControl()
                     if (historical.isSelected) display(snapshot)
@@ -214,12 +214,15 @@ class InspectorDialog(private val project: Project, initialPath: String, private
     private fun later(block: () -> Unit) {
         ApplicationManager.getApplication().invokeLater({ if (!isDisposed && !project.isDisposed) block() }, ModalityState.any())
     }
-    private fun setBusy(value: Boolean) {
+    private fun setBusy(value: Boolean, endingProcesses: Boolean = false) {
         val losingFocus = if (value) refresh.isFocusOwner || browse.isFocusOwner || clear.isFocusOwner || historical.isFocusOwner
             else cancel.isFocusOwner
         if (losingFocus) table.requestFocusInWindow()
         busy = value; refresh.isEnabled = !value; browse.isEnabled = !value; fileField.isEditable = !value
         clear.isEnabled = !value
+        val cancelLabel = Text.get(if (endingProcesses) "cancelTermination" else "cancelScan")
+        cancel.toolTipText = cancelLabel
+        cancel.accessibleContext.accessibleName = cancelLabel
         cancel.isEnabled = value; updateSnapshotControl(); rebuild.isEnabled = !value; updateSelection()
     }
     private fun updateSnapshotControl() {
@@ -246,7 +249,7 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         val valid = runCatching { Path.of(file).isAbsolute && !file.startsWith("\\\\") }.getOrDefault(false)
         if (!valid) { status.text = Text.status("invalidPath"); return }
         fileField.text = file
-        scannedPath = file
+        scannedPath = Diagnostics.pathKey(file)
         history = Diagnostics.get(project).previous(file)
         historical.isSelected = false
         current = null; model.replace(emptyList()); details.text = ""
@@ -316,7 +319,7 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         val names = rows.joinToString("\n") { "${it.name} (PID ${it.pid})" }
         if (Messages.showYesNoDialog(project, Text.get("confirm", names), Text.get("terminate"),
                 Text.get("terminate"), Text.get("cancel"), Messages.getWarningIcon()) != Messages.YES) return
-        val cancellation = Cancellation(); token = cancellation; setBusy(true)
+        val cancellation = Cancellation(); token = cancellation; setBusy(true, endingProcesses = true)
         status.text = Text.get("terminating")
         ApplicationManager.getApplication().executeOnPooledThread {
             val outcomes = mutableListOf<String>()
