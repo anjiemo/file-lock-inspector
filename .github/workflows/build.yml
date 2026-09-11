@@ -1,0 +1,64 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Windows plugin build
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+
+      - name: Install Android Studio SDK 261
+        shell: pwsh
+        run: |
+          choco install androidstudio --yes --no-progress
+          $studio = Get-ChildItem 'C:\Program Files\Android' -Directory -Filter 'Android Studio*' | Select-Object -First 1
+          if ($null -eq $studio) { throw 'Android Studio installation was not found.' }
+          "IDE_HOME=$($studio.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "JAVA_HOME=$($studio.FullName)\jbr" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install Zig 0.14.1
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'zig.zip'
+          $directory = Join-Path $env:RUNNER_TEMP 'zig'
+          Invoke-WebRequest 'https://ziglang.org/download/0.14.1/zig-x86_64-windows-0.14.1.zip' -OutFile $archive
+          Expand-Archive $archive -DestinationPath $directory -Force
+          $zig = Join-Path $directory 'zig-x86_64-windows-0.14.1\zig.exe'
+          if (!(Test-Path -LiteralPath $zig)) { throw 'Zig executable was not found.' }
+          "ZIG_EXE=$zig" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Run tests and package plugin
+        shell: pwsh
+        run: .\gradlew.bat test buildPlugin verifyPluginStructure --no-daemon
+
+      - name: Run native integration test
+        shell: pwsh
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File native/windows/tests/integration.ps1
+
+      - name: Upload plugin and documentation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: file-lock-inspector-${{ github.sha }}
+          path: |
+            build/distributions/file-lock-inspector-*.zip
+            build/distributions/file-lock-inspector-docs-*.zip
+          if-no-files-found: error
+

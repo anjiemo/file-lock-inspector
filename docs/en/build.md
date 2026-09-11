@@ -12,6 +12,8 @@ Download Zig from [the official release](https://ziglang.org/download/0.14.1/zig
 
 ## Commands
 
+GitHub Actions runs the same Windows build, test, native integration test, plugin structure check, and artifact upload on pushes and pull requests. The workflow installs JDK 25, Android Studio, and Zig 0.14.1 on the hosted runner.
+
 Run from the repository root in PowerShell:
 
 ```powershell

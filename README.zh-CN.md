@@ -2,7 +2,7 @@
 
 [English](README.md) | 简体中文
 
-[![版本](https://img.shields.io/jetbrains/plugin/v/io.github.anjiemo.filelockinspector?label=版本)](https://plugins.jetbrains.com/plugin/io.github.anjiemo.filelockinspector) [![JetBrains 插件市场](https://img.shields.io/jetbrains/plugin/r/stars/io.github.anjiemo.filelockinspector?label=插件市场)](https://plugins.jetbrains.com/plugin/io.github.anjiemo.filelockinspector) [![许可证](https://img.shields.io/github/license/anjiemo/file-lock-inspector)](LICENSE) [![平台](https://img.shields.io/badge/平台-Windows%20x64-0078D4)](docs/zh-CN/compatibility.md) [![IDE](https://img.shields.io/badge/IDE-Android%20Studio%20261--262-3DDC84)](docs/zh-CN/compatibility.md)
+[![构建](https://github.com/anjiemo/file-lock-inspector/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/anjiemo/file-lock-inspector/actions/workflows/build.yml) [![版本](https://img.shields.io/jetbrains/plugin/v/io.github.anjiemo.filelockinspector?label=版本)](https://plugins.jetbrains.com/plugin/io.github.anjiemo.filelockinspector) [![JetBrains 插件市场](https://img.shields.io/jetbrains/plugin/r/stars/io.github.anjiemo.filelockinspector?label=插件市场)](https://plugins.jetbrains.com/plugin/io.github.anjiemo.filelockinspector) [![许可证](https://img.shields.io/github/license/anjiemo/file-lock-inspector)](LICENSE) [![平台](https://img.shields.io/badge/平台-Windows%20x64-0078D4)](docs/zh-CN/compatibility.md) [![IDE](https://img.shields.io/badge/IDE-Android%20Studio%20261--262-3DDC84)](docs/zh-CN/compatibility.md)
 
 File Lock Inspector（文件占用诊断）是一个 IntelliJ Platform 插件，用于从 Gradle 构建错误和手动选择的文件路径诊断 Windows 文件占用。插件列出检测到的进程，在用户确认并重新核实进程身份后，支持结束所选进程。
 

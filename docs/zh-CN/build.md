@@ -12,6 +12,8 @@
 
 ## 命令
 
+GitHub Actions 会在推送和 Pull Request 上运行相同的 Windows 构建、测试、原生集成测试、插件结构检查并上传构建产物。工作流会在托管运行器上安装 JDK 25、Android Studio 和 Zig 0.14.1。
+
 在仓库根目录使用 PowerShell：
 
 ```powershell
