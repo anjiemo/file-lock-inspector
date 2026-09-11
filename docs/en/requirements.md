@@ -36,11 +36,11 @@ Selecting processes displays their details, including multiple processes togethe
 
 Details support wrapping, scrolling, and text selection. The header copy icon copies all displayed details. The context menu offers **Copy this detail**, **Copy selected text**, and **Copy all details**. Wrapped entries are copied in full.
 
-## Clearing and History
+## Clearing and Build-error Snapshots
 
 **Clear results** resets the current dialog's list, details, selection, and status while retaining the file path. It does not delete files or terminate processes.
 
-After recognizing a build error, the plugin can capture a timestamped background scan. **Historical results** displays saved diagnosis information for the file. Historical results cannot authorize termination. Clearing the dialog retains saved project history.
+After recognizing a build error, the plugin captures a timestamped background scan. **Build-error snapshot** appears only when the current file has a snapshot and updates automatically when capture completes. Switching is disabled during the current scan. Snapshots are read-only and cannot authorize termination. Manual scans do not create build-error snapshots; clearing the dialog retains saved project snapshots.
 
 ## Termination and Rebuilding
 

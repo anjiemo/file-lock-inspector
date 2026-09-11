@@ -55,7 +55,8 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         font = UIManager.getFont("Label.font")
     }
     private val detailsPanel = JPanel(BorderLayout(0, JBUI.scale(6))).apply { isVisible = false }
-    private val historical = JCheckBox(Text.get("history")).apply { isEnabled = false }
+    private val historical = JCheckBox(Text.get("history")).apply { isEnabled = false; isVisible = false }
+    private var scannedPath: String? = null
     private var current: Snapshot? = null
     private var history: Snapshot? = null
     private var busy = false
@@ -71,7 +72,7 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         minimumSize = preferredSize
     }
     private val refresh = toolButton(AllIcons.Actions.Refresh, Text.get("refresh")).apply { addActionListener { scan() } }
-    private val clear = toolButton(AllIcons.Actions.GC, Text.get("clearResults")).apply {
+    private val clear = toolButton(AllIcons.Actions.ClearCash, Text.get("clearResults")).apply {
         addActionListener { clearResults() }
     }
     private val copyDetails = toolButton(AllIcons.Actions.Copy, Text.get("copyDetails")).apply {
@@ -157,6 +158,15 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         window?.minimumSize = JBUI.size(720, 520)
         Disposer.register(disposable) { token?.cancel() }
         Disposer.register(project, disposable)
+        Diagnostics.get(project).subscribe(disposable) { path, snapshot ->
+            later {
+                if (scannedPath == path) {
+                    history = snapshot
+                    updateSnapshotControl()
+                    if (historical.isSelected) display(snapshot)
+                }
+            }
+        }
         if (initialPath.isNotBlank()) later { scan() }
     }
 
@@ -210,15 +220,22 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         if (losingFocus) table.requestFocusInWindow()
         busy = value; refresh.isEnabled = !value; browse.isEnabled = !value; fileField.isEditable = !value
         clear.isEnabled = !value
-        cancel.isEnabled = value; historical.isEnabled = !value && history != null; rebuild.isEnabled = !value; updateSelection()
+        cancel.isEnabled = value; updateSnapshotControl(); rebuild.isEnabled = !value; updateSelection()
+    }
+    private fun updateSnapshotControl() {
+        historical.isEnabled = !busy && history != null
+        historical.isVisible = history != null
+        historical.parent?.revalidate()
+        historical.parent?.repaint()
     }
     private fun clearResults() {
         if (busy) return
         generation++
         current = null
         history = null
+        scannedPath = null
         historical.isSelected = false
-        historical.isEnabled = false
+        updateSnapshotControl()
         table.clearSelection()
         display(null)
         updateSelection()
@@ -229,6 +246,7 @@ class InspectorDialog(private val project: Project, initialPath: String, private
         val valid = runCatching { Path.of(file).isAbsolute && !file.startsWith("\\\\") }.getOrDefault(false)
         if (!valid) { status.text = Text.status("invalidPath"); return }
         fileField.text = file
+        scannedPath = file
         history = Diagnostics.get(project).previous(file)
         historical.isSelected = false
         current = null; model.replace(emptyList()); details.text = ""
