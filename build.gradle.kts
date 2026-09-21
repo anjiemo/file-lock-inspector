@@ -34,6 +34,7 @@ dependencies {
         bundledPlugin("org.jetbrains.android")
     }
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testRuntimeOnly("junit:junit:4.13.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

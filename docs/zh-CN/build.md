@@ -4,20 +4,20 @@
 
 ## 前提
 
-- Windows x64 和 JDK 25，Android Studio 自带可用 JBR。
-- 本地 Android Studio 261 安装，作为最低 SDK 目标。发布产物使用 261 编译。
+- Windows x64 和 JDK 21，Android Studio 自带可用 JBR。
+- 本地 Android Studio 2025.2.1 Patch 1（平台 build 252）安装，作为最低 SDK 目标。发布产物使用 252 编译。
 - Zig 0.14.1，用于构建静态链接的原生辅助程序；将 `ZIG_EXE` 指向 `zig.exe`。
 
 从[官方发布地址](https://ziglang.org/download/0.14.1/zig-x86_64-windows-0.14.1.zip)下载 Zig，SHA-256 为 `554f5378228923ffd558eac35e21af020c73789d87afeabf4bfd16f2e6feed2c`。未设置 `ZIG_EXE` 时，构建也会检查 `%LOCALAPPDATA%\FileLockInspector\toolchains\zig-x86_64-windows-0.14.1\zig.exe`。
 
 ## 命令
 
-GitHub Actions 会在推送和 Pull Request 上运行相同的 Windows 构建、测试、原生集成测试、插件结构检查并上传构建产物。工作流会在托管运行器上安装 JDK 25、Android Studio 和 Zig 0.14.1。
+GitHub Actions 会在推送和 Pull Request 上运行相同的 Windows 构建、测试、原生集成测试、插件结构检查并上传构建产物。工作流会在托管运行器上安装 JDK 21、Android Studio 2025.2.1 Patch 1 和 Zig 0.14.1。
 
 在仓库根目录使用 PowerShell：
 
 ```powershell
-$env:IDE_HOME = 'D:\ProgramFiles\Android\StudioApps\Android Studio 4'
+$env:IDE_HOME = 'D:\ProgramFiles\Android\StudioApps\Android Studio Otter'
 $env:JAVA_HOME = Join-Path $env:IDE_HOME 'jbr'
 $env:ZIG_EXE = 'C:\toolchains\zig-x86_64-windows-0.14.1\zig.exe'
 .\gradlew.bat test buildPlugin

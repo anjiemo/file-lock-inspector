@@ -18,21 +18,28 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Set up JDK 25
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: '21'
           cache: gradle
 
-      - name: Install Android Studio SDK 261
+      - name: Install Android Studio SDK 252
         shell: pwsh
         run: |
-          choco install androidstudio --yes --no-progress
-          $studio = Get-ChildItem 'C:\Program Files\Android' -Directory -Filter 'Android Studio*' | Select-Object -First 1
-          if ($null -eq $studio) { throw 'Android Studio installation was not found.' }
-          "IDE_HOME=$($studio.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "JAVA_HOME=$($studio.FullName)\jbr" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $version = '2025.2.1.8'
+          $expectedHash = '363CFB43B60C10A1F1A710ABC2A26E4B0E403D4D75A26A0DF1E29A6920732418'
+          $archive = Join-Path $env:RUNNER_TEMP "android-studio-$version.zip"
+          $directory = Join-Path $env:RUNNER_TEMP "android-studio-$version"
+          curl.exe --fail --location --retry 5 "https://dl.google.com/dl/android/studio/ide-zips/$version/android-studio-$version-windows.zip" --output $archive
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash -ne $expectedHash) { throw 'Android Studio archive checksum mismatch.' }
+          Expand-Archive $archive -DestinationPath $directory -Force
+          $studio = Join-Path $directory 'android-studio'
+          $product = Get-Content (Join-Path $studio 'product-info.json') -Raw | ConvertFrom-Json
+          if ($product.buildNumber -ne '252.25557.131.2521.14432022') { throw "Unexpected Android Studio build: $($product.buildNumber)" }
+          "IDE_HOME=$studio" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "JAVA_HOME=$studio\jbr" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install Zig 0.14.1
         shell: pwsh
@@ -61,4 +68,3 @@ jobs:
             build/distributions/file-lock-inspector-*.zip
             build/distributions/file-lock-inspector-docs-*.zip
           if-no-files-found: error
-

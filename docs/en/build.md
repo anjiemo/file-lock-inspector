@@ -4,20 +4,20 @@ English | [简体中文](../zh-CN/build.md)
 
 ## Prerequisites
 
-- Windows x64 and JDK 25 (Android Studio includes a suitable JBR).
-- A local Android Studio 261 installation as the minimum SDK target. Release artifacts are compiled against 261.
+- Windows x64 and JDK 21 (Android Studio includes a suitable JBR).
+- A local Android Studio 2025.2.1 Patch 1 installation (platform build 252) as the minimum SDK target. Release artifacts are compiled against 252.
 - Zig 0.14.1 for the statically linked native helper. Set `ZIG_EXE` to `zig.exe`.
 
 Download Zig from [the official release](https://ziglang.org/download/0.14.1/zig-x86_64-windows-0.14.1.zip). Its SHA-256 is `554f5378228923ffd558eac35e21af020c73789d87afeabf4bfd16f2e6feed2c`. The build also checks `%LOCALAPPDATA%\FileLockInspector\toolchains\zig-x86_64-windows-0.14.1\zig.exe` when `ZIG_EXE` is unset.
 
 ## Commands
 
-GitHub Actions runs the same Windows build, test, native integration test, plugin structure check, and artifact upload on pushes and pull requests. The workflow installs JDK 25, Android Studio, and Zig 0.14.1 on the hosted runner.
+GitHub Actions runs the same Windows build, test, native integration test, plugin structure check, and artifact upload on pushes and pull requests. The workflow installs JDK 21, Android Studio 2025.2.1 Patch 1, and Zig 0.14.1 on the hosted runner.
 
 Run from the repository root in PowerShell:
 
 ```powershell
-$env:IDE_HOME = 'D:\ProgramFiles\Android\StudioApps\Android Studio 4'
+$env:IDE_HOME = 'D:\ProgramFiles\Android\StudioApps\Android Studio Otter'
 $env:JAVA_HOME = Join-Path $env:IDE_HOME 'jbr'
 $env:ZIG_EXE = 'C:\toolchains\zig-x86_64-windows-0.14.1\zig.exe'
 .\gradlew.bat test buildPlugin
