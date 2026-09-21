@@ -25,7 +25,7 @@ class IdeSmokeStarter : ApplicationStarter {
     override fun main(args: List<String>) {
         val output = Path.of(args[1]); Files.createDirectories(output)
         try {
-            check(PluginManagerCore.getPlugin(PluginId.getId("io.github.anjiemo.filelockinspector"))?.isEnabled == true)
+            check(PluginManagerCore.isLoaded(PluginId.getId("io.github.anjiemo.filelockinspector")))
             val provider = GradleErrorQuickFixProvider.getProviders().single { it.javaClass.name.endsWith("AndroidLockQuickFixProvider") }
             val project = ProjectManager.getInstance().defaultProject
             val windowExtension = com.intellij.openapi.wm.ToolWindowEP.EP_NAME.extensionList.single { it.id == InspectorToolWindow.ID }
@@ -44,13 +44,13 @@ class IdeSmokeStarter : ApplicationStarter {
                 check(queryManager.contentCount == 1)
                 val emptyContent = queryManager.contents.single()
                 InspectorToolWindow.addQuery(project, testWindow, output.resolve("first.jar").toString(), null)
-                check(queryManager.contentCount == 1 && com.intellij.openapi.util.Disposer.isDisposed(emptyContent))
+                check(queryManager.contentCount == 1 && !emptyContent.isValid)
                 InspectorToolWindow.addQuery(project, testWindow, output.resolve("second.jar").toString(), null)
                 check(queryManager.contentCount == 2)
                 val selectedContent = checkNotNull(queryManager.selectedContent)
                 check(selectedContent.displayName == "second.jar" && selectedContent.isCloseable)
                 queryManager.removeContent(selectedContent, true)
-                check(com.intellij.openapi.util.Disposer.isDisposed(selectedContent) && queryManager.contentCount == 1)
+                check(!selectedContent.isValid && queryManager.contentCount == 1)
             } finally { com.intellij.openapi.util.Disposer.dispose(queryManager) }
             val actionManager = com.intellij.openapi.actionSystem.ActionManager.getInstance()
             val inspectAction = checkNotNull(actionManager.getAction("FileLockInspector.Inspect"))
@@ -123,6 +123,7 @@ class IdeSmokeStarter : ApplicationStarter {
                     }
                 } finally { configurable.disposeUIResources() }
                 val dialog = InspectorPanel(project, "")
+                var dialogDisposed = false
                 try {
                     val panel = dialog.component
                     fun renderDialog(name: String, width: Int, height: Int) {
@@ -259,8 +260,9 @@ class IdeSmokeStarter : ApplicationStarter {
                     val cancellation = Cancellation()
                     dialog.javaClass.getDeclaredField("token").apply { isAccessible = true }.set(dialog, cancellation)
                     com.intellij.openapi.util.Disposer.dispose(dialog)
+                    dialogDisposed = true
                     check(cancellation.cancelled.get())
-                } finally { if (!com.intellij.openapi.util.Disposer.isDisposed(dialog)) com.intellij.openapi.util.Disposer.dispose(dialog) }
+                } finally { if (!dialogDisposed) com.intellij.openapi.util.Disposer.dispose(dialog) }
             }
             settings.state.language = "IDE"
             Files.writeString(output.resolve("result.txt"), "PASS: plugin loading, AS provider registration and quick fix, GradleIssueData compatibility, bundled native scan, cancellation with partial results, IDE protection, English and Chinese dialog rendering")

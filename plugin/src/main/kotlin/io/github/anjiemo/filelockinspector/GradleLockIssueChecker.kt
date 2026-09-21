@@ -3,8 +3,9 @@ package io.github.anjiemo.filelockinspector
 import com.intellij.build.FilePosition
 import com.intellij.build.BuildView
 import com.intellij.build.events.BuildEvent
+import com.intellij.build.events.BuildIssueEvent
 import com.intellij.build.events.MessageEvent
-import com.intellij.build.events.impl.BuildIssueEventImpl
+import com.intellij.build.events.MessageEventResult
 import com.intellij.build.issue.BuildIssue
 import com.intellij.build.issue.BuildIssueQuickFix
 import com.intellij.ide.plugins.PluginManagerCore
@@ -13,7 +14,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.pom.Navigatable
@@ -30,19 +31,45 @@ open class InspectQuickFix(private val files: List<String>) : BuildIssueQuickFix
         ApplicationManager.getApplication().invokeLater {
             try {
                 if (!project.isDisposed) {
-                    val file = if (files.size == 1) files.single() else {
-                        val selection = Messages.showChooseDialog(project, Text.get("chooseTarget"), Text.get("inspect"),
-                            Messages.getQuestionIcon(), files.toTypedArray(), files.first())
-                        files.getOrNull(selection)
+                    fun inspect(file: String) {
+                        val actions = BuildView.RESTART_ACTIONS.getData(dataContext).orEmpty()
+                        InspectorToolWindow.open(project, file, actions.singleOrNull()?.let { BuildRestart(it, dataContext) })
+                        future.complete(null)
                     }
-                    val actions = BuildView.RESTART_ACTIONS.getData(dataContext).orEmpty()
-                    if (file != null) InspectorToolWindow.open(project, file, actions.singleOrNull()?.let { BuildRestart(it, dataContext) })
+                    if (files.size == 1) inspect(files.single())
+                    else JBPopupFactory.getInstance().createPopupChooserBuilder(files)
+                        .setTitle(Text.get("chooseTarget"))
+                        .setItemChosenCallback(::inspect)
+                        .setCancelCallback { future.complete(null); true }
+                        .createPopup()
+                        .showCenteredInCurrentWindow(project)
+                } else {
+                    future.complete(null)
                 }
-                future.complete(null)
             }
             catch (error: Exception) { future.completeExceptionally(error) }
         }
         return future
+    }
+}
+
+private class LockBuildIssueEvent(private val parent: Any, private val buildIssue: BuildIssue) : BuildIssueEvent {
+    private val eventId = Any()
+    private val createdAt = System.currentTimeMillis()
+
+    override fun getId(): Any = eventId
+    override fun getParentId(): Any = parent
+    override fun getEventTime(): Long = createdAt
+    override fun getMessage(): String = buildIssue.title
+    override fun getHint(): String? = null
+    override fun getDescription(): String = buildIssue.description
+    override fun getKind(): MessageEvent.Kind = MessageEvent.Kind.ERROR
+    override fun getGroup(): String = buildIssue.title
+    override fun getNavigatable(project: Project): Navigatable? = buildIssue.getNavigatable(project)
+    override fun getIssue(): BuildIssue = buildIssue
+    override fun getResult(): MessageEventResult = object : MessageEventResult {
+        override fun getKind(): MessageEvent.Kind = MessageEvent.Kind.ERROR
+        override fun getDetails(): String = buildIssue.description
     }
 }
 
@@ -74,7 +101,7 @@ class GradleLockIssueChecker : GradleIssueChecker {
     }
     override fun consumeBuildOutputFailureMessage(message: String, failureCause: String, stacktrace: String?, location: FilePosition?, parentEventId: Any, messageConsumer: Consumer<in BuildEvent>): Boolean {
         val issue = issue(listOfNotNull(message, stacktrace).joinToString("\n")) ?: return false
-        messageConsumer.accept(BuildIssueEventImpl(parentEventId, issue, MessageEvent.Kind.ERROR))
+        messageConsumer.accept(LockBuildIssueEvent(parentEventId, issue))
         return true
     }
 }

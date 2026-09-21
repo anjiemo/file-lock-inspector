@@ -26,6 +26,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File native/windows/tests/int
 
 You can also pass `-PidePath=...` instead of `IDE_HOME`. If Maven Central is inaccessible, supply an explicitly chosen mirror such as `-PmavenMirror=https://maven.aliyun.com/repository/central`. No mirror is enabled by default.
 
+To check multiple local IDE installations with IntelliJ Plugin Verifier, separate their installation directories with the system path separator:
+
+```powershell
+.\gradlew.bat verifyPlugin '-PverificationIdePaths=D:\Android Studio 252;D:\Android Studio 261;D:\Android Studio 262'
+```
+
 The plugin ZIP is written under `build/distributions/`. Install it through the IDE's **Settings > Plugins > gear menu > Install Plugin from Disk**. For an isolated development IDE, run `gradlew.bat runIde`; it uses the build sandbox rather than your normal configuration.
 
 The native integration test creates its own file holders under `build/native-tests/`, tests identification and selected termination, and cleans up only its own processes. The test targets are generated fixtures.

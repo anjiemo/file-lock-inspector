@@ -54,7 +54,7 @@ jobs:
 
       - name: Run tests and package plugin
         shell: pwsh
-        run: .\gradlew.bat test buildPlugin verifyPluginStructure --no-daemon
+        run: .\gradlew.bat test buildPlugin verifyPluginStructure verifyPlugin --no-daemon "-PverificationIdePaths=$env:IDE_HOME"
 
       - name: Run native integration test
         shell: pwsh

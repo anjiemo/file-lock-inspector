@@ -149,11 +149,7 @@ class InspectorPanel(private val project: Project, initialPath: String, private 
         override fun actionPerformed(e: ActionEvent?) {
             restart?.let {
                 val event = AnActionEvent.createEvent(it.action, it.context, null, "FileLockInspector", ActionUiKind.NONE, null)
-                @Suppress("DEPRECATION")
-                if (ActionUtil.lastUpdateAndCheckDumb(it.action, event, true)) {
-                    ActionUtil.performAction(it.action, event)
-                    isEnabled = false
-                }
+                if (!ActionUtil.performAction(it.action, event).isIgnored) isEnabled = false
             }
         }
     }

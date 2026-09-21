@@ -26,6 +26,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File native/windows/tests/int
 
 也可以用 `-PidePath=...` 替代 `IDE_HOME`。Maven Central 不可访问时，显式指定所选镜像，例如 `-PmavenMirror=https://maven.aliyun.com/repository/central`；默认不启用镜像。
 
+使用 IntelliJ Plugin Verifier 检查多个本地 IDE 时，通过系统路径分隔符传入安装目录：
+
+```powershell
+.\gradlew.bat verifyPlugin '-PverificationIdePaths=D:\Android Studio 252;D:\Android Studio 261;D:\Android Studio 262'
+```
+
 插件 ZIP 输出到 `build/distributions/`。在 IDE 的 **Settings > Plugins > 齿轮菜单 > Install Plugin from Disk** 中安装。使用 `gradlew.bat runIde` 可启动独立开发 IDE，使用构建沙箱而非日常配置。
 
 原生集成测试在 `build/native-tests/` 中创建自己的文件占用进程，验证识别和选择性结束，最后仅回收这些测试进程。测试目标均为生成的测试文件。

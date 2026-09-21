@@ -1,4 +1,6 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.File
 import java.util.Properties
 
 plugins {
@@ -14,6 +16,7 @@ fun Properties.required(key: String): String = getProperty(key)?.takeIf { it.isN
 
 val pluginMetadata = configuration("config/plugin.properties")
 val compatibility = configuration("config/compatibility.properties")
+val verificationIdePaths = providers.gradleProperty("verificationIdePaths").orNull
 group = pluginMetadata.required("group")
 version = configuration("version.properties").required("version")
 
@@ -39,7 +42,10 @@ dependencies {
 }
 
 kotlin {
-    compilerOptions { jvmTarget.set(JvmTarget.JVM_21) }
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_21)
+        jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
+    }
     sourceSets.main { kotlin.srcDirs("plugin/src/main/kotlin", "android-studio/src/main/kotlin") }
     sourceSets.test { kotlin.srcDirs("plugin/src/test/kotlin") }
     if (providers.gradleProperty("ideSmoke").isPresent) sourceSets.main { kotlin.srcDir("plugin/src/smoke/kotlin") }
@@ -74,6 +80,11 @@ tasks.buildPlugin {
     doFirst { check(!providers.gradleProperty("ideSmoke").isPresent) { "Do not package smoke-test entry points. Omit -PideSmoke." } }
 }
 intellijPlatform {
+    pluginVerification {
+        ides {
+            verificationIdePaths?.split(File.pathSeparatorChar)?.filter(String::isNotBlank)?.forEach { local(file(it)) }
+        }
+    }
     pluginConfiguration {
         id = pluginMetadata.required("id")
         name = pluginMetadata.required("name")
