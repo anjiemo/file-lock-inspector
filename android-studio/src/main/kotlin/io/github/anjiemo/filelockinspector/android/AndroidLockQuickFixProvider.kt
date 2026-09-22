@@ -10,6 +10,7 @@ import com.intellij.build.events.MessageEvent
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskId
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.VirtualFile
 import io.github.anjiemo.filelockinspector.*
 
@@ -23,6 +24,7 @@ class AndroidLockQuickFixProvider : GradleErrorQuickFixProvider {
         taskId.findProject()?.let { project -> files.forEach { Diagnostics.get(project).capture(it) } }
         return object : InspectQuickFix(files), DescribedBuildIssueQuickFix {
             override val description: String get() = Text.get("inspect")
+            override val html: String get() = "&nbsp;&nbsp;<a href=\"$id\">${StringUtil.escapeXmlEntities(description)}</a>"
         }
     }
     override fun createSyncMessageAdditionalLink(syncMessage: SyncMessage, affectedModules: List<Module>, buildFileMap: Map<Module, VirtualFile>, rootProjectPath: String): SyncMessageHyperlink? = null

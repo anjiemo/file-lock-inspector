@@ -91,7 +91,8 @@ class IdeSmokeStarter : ApplicationStarter {
             val error = "$file: The process cannot access the file because it is being used by another process"
             val event = MessageEventImpl("smoke", MessageEvent.Kind.ERROR, null, error, error)
             val task = ExternalSystemTaskId.create(ProjectSystemId("GRADLE"), ExternalSystemTaskType.EXECUTE_TASK, project)
-            check(provider.createBuildIssueAdditionalQuickFix(event, task) != null) { "No AS quick fix" }
+            val androidQuickFix = checkNotNull(provider.createBuildIssueAdditionalQuickFix(event, task)) { "No AS quick fix" }
+            check(androidQuickFix.html.startsWith("&nbsp;&nbsp;<a href=\"${androidQuickFix.id}\">")) { "AS quick fix has no link spacing" }
             val issueType = GradleIssueData::class.java
             val throwable = IllegalStateException(error)
             val issueData = if (issueType.isInterface) {
