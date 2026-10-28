@@ -92,7 +92,7 @@ class IdeSmokeStarter : ApplicationStarter {
             val event = MessageEventImpl("smoke", MessageEvent.Kind.ERROR, null, error, error)
             val task = ExternalSystemTaskId.create(ProjectSystemId("GRADLE"), ExternalSystemTaskType.EXECUTE_TASK, project)
             val androidQuickFix = checkNotNull(provider.createBuildIssueAdditionalQuickFix(event, task)) { "No AS quick fix" }
-            check(androidQuickFix.html.startsWith("&nbsp;&nbsp;<a href=\"${androidQuickFix.id}\">")) { "AS quick fix has no link spacing" }
+            check(androidQuickFix.html.startsWith("  <a href=\"${androidQuickFix.id}\">")) { "AS quick fix has no link spacing" }
             val issueType = GradleIssueData::class.java
             val throwable = IllegalStateException(error)
             val issueData = if (issueType.isInterface) {

@@ -24,7 +24,7 @@ class AndroidLockQuickFixProvider : GradleErrorQuickFixProvider {
         taskId.findProject()?.let { project -> files.forEach { Diagnostics.get(project).capture(it) } }
         return object : InspectQuickFix(files), DescribedBuildIssueQuickFix {
             override val description: String get() = Text.get("inspect")
-            override val html: String get() = "&nbsp;&nbsp;<a href=\"$id\">${StringUtil.escapeXmlEntities(description)}</a>"
+            override val html: String get() = "  <a href=\"$id\">${StringUtil.escapeXmlEntities(description)}</a>"
         }
     }
     override fun createSyncMessageAdditionalLink(syncMessage: SyncMessage, affectedModules: List<Module>, buildFileMap: Map<Module, VirtualFile>, rootProjectPath: String): SyncMessageHyperlink? = null
