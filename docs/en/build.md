@@ -29,7 +29,7 @@ You can also pass `-PidePath=...` instead of `IDE_HOME`. If Maven Central is ina
 To check multiple local IDE installations with IntelliJ Plugin Verifier, separate their installation directories with the system path separator:
 
 ```powershell
-.\gradlew.bat verifyPlugin '-PverificationIdePaths=D:\Android Studio 252;D:\Android Studio 261;D:\Android Studio 262'
+.\gradlew.bat verifyPlugin '-PverificationIdePaths=D:\Android Studio 252;D:\Android Studio 261;D:\Android Studio 262;D:\Android Studio 263'
 ```
 
 The plugin ZIP is written under `build/distributions/`. Install it through the IDE's **Settings > Plugins > gear menu > Install Plugin from Disk**. For an isolated development IDE, run `gradlew.bat runIde`; it uses the build sandbox rather than your normal configuration.
@@ -44,7 +44,7 @@ Build configuration is organized by responsibility:
 | --- | --- |
 | `version.properties` | Shared plugin and native helper version |
 | `config/plugin.properties` | Plugin ID, name, Maven group, and vendor |
-| `config/compatibility.properties` | Supported IDE build range |
+| `config/compatibility.properties` | Minimum supported IDE build; omit `untilBuild` for no upper limit |
 | `config/description.en.html` | English plugin description |
 | `config/description.zh-CN.html` | Simplified Chinese plugin description |
 | `gradle/documentation.gradle.kts` | Documentation rendering and archive tasks |

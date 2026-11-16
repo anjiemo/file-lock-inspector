@@ -97,7 +97,8 @@ intellijPlatform {
         }
         ideaVersion {
             sinceBuild = compatibility.required("sinceBuild")
-            untilBuild = compatibility.required("untilBuild")
+            // 未配置 untilBuild 时不写入上限，表示兼容所有后续 IDE 版本。
+            compatibility.getProperty("untilBuild")?.takeIf(String::isNotBlank)?.let { untilBuild = it }
         }
     }
     buildSearchableOptions = false

@@ -29,7 +29,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File native/windows/tests/int
 使用 IntelliJ Plugin Verifier 检查多个本地 IDE 时，通过系统路径分隔符传入安装目录：
 
 ```powershell
-.\gradlew.bat verifyPlugin '-PverificationIdePaths=D:\Android Studio 252;D:\Android Studio 261;D:\Android Studio 262'
+.\gradlew.bat verifyPlugin '-PverificationIdePaths=D:\Android Studio 252;D:\Android Studio 261;D:\Android Studio 262;D:\Android Studio 263'
 ```
 
 插件 ZIP 输出到 `build/distributions/`。在 IDE 的 **Settings > Plugins > 齿轮菜单 > Install Plugin from Disk** 中安装。使用 `gradlew.bat runIde` 可启动独立开发 IDE，使用构建沙箱而非日常配置。
@@ -44,7 +44,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File native/windows/tests/int
 | --- | --- |
 | `version.properties` | 插件和原生辅助程序共用的版本号 |
 | `config/plugin.properties` | 插件 ID、名称、Maven 分组及作者信息 |
-| `config/compatibility.properties` | 支持的 IDE 构建版本范围 |
+| `config/compatibility.properties` | 最低支持的 IDE 构建版本；省略 `untilBuild` 表示不设上限 |
 | `config/description.en.html` | 英文插件介绍 |
 | `config/description.zh-CN.html` | 简体中文插件介绍 |
 | `gradle/documentation.gradle.kts` | 文档渲染和压缩包任务 |
