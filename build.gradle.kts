@@ -85,6 +85,10 @@ intellijPlatform {
             verificationIdePaths?.split(File.pathSeparatorChar)?.filter(String::isNotBlank)?.forEach { local(file(it)) }
         }
     }
+    publishing {
+        // 从环境变量读取 JetBrains Marketplace 发布令牌，避免将凭据写入仓库。
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+    }
     pluginConfiguration {
         id = pluginMetadata.required("id")
         name = pluginMetadata.required("name")
